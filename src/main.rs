@@ -51,6 +51,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     fs::create_dir_all(directory_path)?;
 
     let eth_price_usd = fetch_ethereum_price().await?;
+    println!("ETH Price USD: {}", eth_price_usd);
 
     fetch_dex_data("polygon_pos").await?;
 
@@ -72,21 +73,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     }
-
     fetch_polygon_dex_pools("uniswap_v3_polygon_pos").await?;
-
-    // println!("ETH Price USD: {}", eth_price_usd);
-
     // Print the vector to verify
     println!("{:?}", dex_ids);
-
     for dex in dex_ids {
         fetch_polygon_dex_pools(&dex).await?;
         tokio::time::sleep(Duration::from_secs(2)).await;
     }
-
     let (safe_gas, fast_gas) = fetch_polygon_gas_price().await?;
-
     Ok(())
 }
 
@@ -175,24 +169,15 @@ async fn fetch_dex_data(network: &str) -> Result<Value, Box<dyn Error>> {
         "https://api.geckoterminal.com/api/v2/networks/{}/dexes",
         network
     );
-
     // Make the API call
     let response = reqwest::get(url).await?;
-
     if response.status().is_success() {
-        // Parse the response JSON
         let data: Value = response.json().await?;
         let json_str = to_string_pretty(&data)?;
-        // store in transitional data
-        // network_data.push(data.clone());
         let mut f =
             File::create(format!("./polygon/{}.json", network)).expect("Unable to create file");
         f.write_all(json_str.as_bytes())
             .expect("Unable to write data");
-
-        // Process the data as needed
-        // println!("Network: {}", network);
-        // println!("{:#?}", data);
 
         // Introduce a 2-second delay before the next API call
         tokio::time::sleep(Duration::from_secs(2)).await;
@@ -232,11 +217,8 @@ async fn fetch_polygon_dex_pools(dex: &str) -> Result<Value, Box<dyn Error>> {
                 .as_str()
                 .unwrap_or_default()
                 .to_string();
-            let base_token = pool_data["relationships"]["base_token"]["data"]["id"]
-                .as_str()
-                .unwrap_or_default()
-                .to_string();
-            let base_token_address = pool_data["attributes"]["address"]
+            let (base_token, quote_token) = separate_token_names(&name);
+            let base_token_address = pool_data["relationships"]["base_token"]["data"]["id"]
                 .as_str()
                 .unwrap_or_default()
                 .to_string();
@@ -251,10 +233,6 @@ async fn fetch_polygon_dex_pools(dex: &str) -> Result<Value, Box<dyn Error>> {
                 .unwrap_or_default()
                 .replace('\"', "");
             let base_token_price_native = base_token_price_native_str.parse().ok();
-            let quote_token = pool_data["relationships"]["quote_token"]["data"]["id"]
-                .as_str()
-                .unwrap_or_default()
-                .to_string();
             let quote_token_address = pool_data["relationships"]["quote_token"]["data"]["id"]
                 .as_str()
                 .unwrap_or_default()
@@ -279,21 +257,17 @@ async fn fetch_polygon_dex_pools(dex: &str) -> Result<Value, Box<dyn Error>> {
                 name: format!("{}_{}", dex, name),
                 pool_address,
                 base_token,
-                base_token_address,
-                base_token_price_usd: base_token_price_usd.unwrap_or(0.0),
-                base_token_price_native: base_token_price_native.unwrap_or(0.0),
+                base_token_address: extract_token_address(&base_token_address).to_string(),
+                base_token_price_usd: base_token_price_usd.unwrap_or(0.0666),
+                base_token_price_native: base_token_price_native.unwrap_or(0.0666),
                 quote_token,
-                quote_token_address,
-                quote_token_price_usd: quote_token_price_usd.unwrap_or(0.0),
-                quote_token_price_native: quote_token_price_native.unwrap_or(0.0),
-                reserve_usd: reserve_usd.unwrap_or(0.0),
+                quote_token_address: extract_token_address(&quote_token_address).to_string(),
+                quote_token_price_usd: quote_token_price_usd.unwrap_or(0.0666),
+                quote_token_price_native: quote_token_price_native.unwrap_or(0.0666),
+                reserve_usd: reserve_usd.unwrap_or(0.666),
             };
-
-            // Now you can use `dex_pool` as needed, for example, printing its details
             println!("{:?}", &dex_pool);
         }
-        // println!("Dex: {}", dex);
-        // println!("{:#?}", data);
         let json_str = to_string_pretty(&data)?;
         let mut f = File::create(format!("./polygon/{}.json", dex)).expect("Unable to create file");
         f.write_all(json_str.as_bytes())
@@ -309,12 +283,20 @@ async fn fetch_polygon_dex_pools(dex: &str) -> Result<Value, Box<dyn Error>> {
 }
 
 fn extract_token_address(id: &str) -> &str {
-    // Find the position of the last underscore
     if let Some(pos) = id.rfind('_') {
-        // Get the substring from the character after the underscore to the end
         &id[pos + 1..]
     } else {
-        // Return the entire string if no underscore is found, or handle this case as needed
         id
+    }
+}
+
+fn separate_token_names(pool_name: &str) -> (String, String) {
+    let tokens: Vec<&str> = pool_name.split(" / ").collect();
+    if tokens.len() == 2 {
+        let base_token_name = tokens[0].trim().to_uppercase();
+        let quote_token_name = tokens[1].trim().to_uppercase();
+        (base_token_name, quote_token_name)
+    } else {
+        (String::new(), String::new())
     }
 }
