@@ -1,7 +1,8 @@
 #![allow(unused)]
 
+mod abi_fetcher;
+
 use reqwest;
-// use reqwest::Error;
 use serde_json::to_string_pretty;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -11,11 +12,6 @@ use std::fs::File;
 use std::io::empty;
 use std::io::Write;
 use tokio::time::Duration;
-
-// Structure to hold the price data
-// Outer HashMap key: Token pair (e.g., "ETH/USDC")
-// Inner HashMap key: DEX name, value: Price
-type PriceData = HashMap<String, HashMap<String, f64>>;
 
 #[derive(Debug)]
 struct Dex {
@@ -82,16 +78,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
     let (safe_gas, fast_gas) = fetch_polygon_gas_price().await?;
     Ok(())
-}
-
-fn populate_price_data(/* parameters to fetch data */) -> PriceData {
-    let mut price_data = PriceData::new();
-
-    // Logic to populate price_data
-    // You would loop through your DEX data, parse out the token pairs and prices,
-    // and insert them into the price_data HashMap
-
-    price_data
 }
 
 fn calculate_slippage(

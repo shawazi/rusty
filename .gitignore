@@ -16,3 +16,5 @@ target/
 # jsons
 jsons/
 polygon/
+
+.env

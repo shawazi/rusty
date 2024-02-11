@@ -4,12 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "second"
-path = "src/second.rs"
+name = "abi"
+path = "src/abi_fetcher.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+env-file-reader = "0.3.0"
 ethers = "2.0.11"
 reqwest = "0.11.23"
 serde = { version = "1.0", features = ["derive"] }
