@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 mod abi_fetcher;
 mod calc_slip;
 mod dex_fetcher;
@@ -87,6 +85,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let (safe_gas, fast_gas) = fetch_poly_gas::fetch_polygon_gas_price().await?;
 
     let provider = init_provider();
+
+    // Calculate arbitrage opportunities for the
 
     Ok(())
 }
