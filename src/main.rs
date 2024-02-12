@@ -7,15 +7,9 @@ mod fetch_eth_price;
 mod fetch_poly_gas;
 
 use ethers_provider::init_provider;
-use reqwest;
-use serde_json::to_string_pretty;
 use serde_json::Value;
-use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
-use std::fs::File;
-use std::io::empty;
-use std::io::Write;
 use tokio::time::Duration;
 
 #[derive(Debug)]
