@@ -33,13 +33,6 @@ struct DexPool {
     reserve_usd: f64,
 }
 
-#[derive(Debug)]
-struct ArbitrageOpportunity {
-    dex1: Dex,
-    dex2: Dex,
-    profit_percentage: f64,
-}
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let directory_path = "./polygon";
